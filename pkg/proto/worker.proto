@@ -1,0 +1,84 @@
+syntax = "proto3";
+
+package worker;
+
+option go_package = "github.com/emmitrin/spark/pkg/proto";
+
+service WorkerService {
+  rpc GetCurrentState(GetCurrentStateRequest) returns (GetCurrentStateResponse);
+  rpc EnqueueTask(EnqueueTaskRequest) returns (EnqueueTaskResponse);
+  rpc TerminateTask(TerminateTaskRequest) returns (TerminateTaskResponse);
+}
+
+message GetCurrentStateRequest {
+}
+
+message GetCurrentStateResponse {
+  WorkerStatus status = 1;
+  repeated TaskInfo tasks = 2;
+  ResourceUsage resources = 3;
+}
+
+enum WorkerStatus {
+  WORKER_STATUS_UNKNOWN = 0;
+  WORKER_STATUS_HEALTHY = 1;
+  WORKER_STATUS_DEGRADED = 2;
+  WORKER_STATUS_UNHEALTHY = 3;
+}
+
+message TaskInfo {
+  string task_id = 1;
+  TaskStatus status = 2;
+  string container_id = 3;
+  int64 created_at = 4;
+  ResourceUsage resources = 5;
+  repeated string networks = 6;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNKNOWN = 0;
+  TASK_STATUS_PENDING = 1;
+  TASK_STATUS_RUNNING = 2;
+  TASK_STATUS_COMPLETED = 3;
+  TASK_STATUS_FAILED = 4;
+  TASK_STATUS_TERMINATED = 5;
+}
+
+message ResourceUsage {
+  double cpu_usage_percent = 1;
+  int64 memory_used_bytes = 2;
+  int64 memory_limit_bytes = 3;
+  int64 network_rx_bytes = 4;
+  int64 network_tx_bytes = 5;
+}
+
+message EnqueueTaskRequest {
+  bytes docker_compose = 1;
+  ResourceLimits resource_limits = 2;
+  int32 timeout_seconds = 3;
+  string image = 4;
+}
+
+message ResourceLimits {
+  double cpu_limit = 1;
+  int64 memory_limit_bytes = 2;
+  int64 disk_limit_bytes = 3;
+  int32 network_bandwidth_mbps = 4;
+}
+
+message EnqueueTaskResponse {
+  bool success = 1;
+  string task_id = 2;
+  string message = 3;
+  string container_id = 4;
+}
+
+message TerminateTaskRequest {
+  string task_id = 1;
+  bool force = 2;
+}
+
+message TerminateTaskResponse {
+  bool success = 1;
+  string message = 2;
+}

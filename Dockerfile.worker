@@ -1,0 +1,39 @@
+FROM golang:1.21-alpine AS builder
+
+WORKDIR /build
+
+# Установка зависимостей для сборки
+RUN apk add --no-cache git make protobuf protobuf-dev
+
+# Копируем go mod файлы
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Копируем исходный код
+COPY . .
+
+# Генерируем protobuf файлы
+RUN make proto || true
+
+# Собираем приложение
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/worker ./cmd/worker
+
+# Финальный образ
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates tzdata
+
+WORKDIR /app
+
+# Копируем бинарник из builder
+COPY --from=builder /build/bin/worker .
+
+# Создаем пользователя для запуска
+RUN addgroup -g 1000 spark && \
+    adduser -D -u 1000 -G spark spark
+
+USER spark
+
+EXPOSE 50051
+
+ENTRYPOINT ["./worker"]

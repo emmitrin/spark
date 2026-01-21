@@ -1,0 +1,35 @@
+# Пример конфигурации Spark Worker Node
+# Использование: ./bin/worker --config config.yaml
+# Переменные окружения переопределяют значения из файла
+
+grpc:
+  address: "0.0.0.0"
+  port: 50051
+
+docker:
+  endpoint: "unix:///var/run/docker.sock"
+  use_gvisor: true
+  gvisor_runtime: "runsc"
+  default_cpu_limit: 0.5
+  default_mem_limit: 536870912  # 512MB в байтах
+
+opensearch:
+  addresses:
+    - "http://localhost:9200"
+  username: "admin"
+  password: "admin"
+  index_name: "spark-ioc"
+  use_tls: false
+  skip_verify: false
+
+monitor:
+  enabled: true
+  collect_interval: "5s"
+  file_ops_enabled: true
+  network_ops_enabled: true
+  # bpf_object_path: ""   # необязательно; путь к bpf_programs.o; пусто — авто-поиск или заглушки
+  echo_mode: false        # true: не слать в OpenSearch, логировать события eBPF в консоль (для проверки мониторинга)
+
+log:
+  level: "info"
+  format: "json"

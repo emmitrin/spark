@@ -1,0 +1,53 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Config files with secrets
+config.local.yaml
+config.yaml
+*.key
+*.pem
+
+# Logs
+*.log
+
+# Docker
+docker-compose.override.yml
+
+# eBPF compiled objects (should be compiled, not committed)
+*.o
+# But keep C source files
+!*.c
+
+# Generated protobuf files
+*.pb.go
+*.pb.gw.go
+
+# Temporary files
+/tmp/
+*.tmp
+*.bak
+*~

@@ -1,0 +1,9 @@
+bin/
+*.md
+.git/
+.gitignore
+.dockerignore
+docker-compose.yml
+Dockerfile*
+config.example.yaml
+INSTALL.md

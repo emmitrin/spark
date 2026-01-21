@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: opensearch
+    environment:
+      - discovery.type=single-node
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=false"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - spark-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    container_name: opensearch-dashboards
+    ports:
+      - "5601:5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=false"
+    networks:
+      - spark-network
+    depends_on:
+      - opensearch
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: spark-worker
+    environment:
+      - GRPC_ADDRESS=0.0.0.0
+      - GRPC_PORT=50051
+      - DOCKER_ENDPOINT=unix:///var/run/docker.sock
+      - DOCKER_USE_GVISOR=true
+      - DOCKER_GVISOR_RUNTIME=runsc
+      - OPENSEARCH_ADDRESSES=["http://opensearch:9200"]
+      - OPENSEARCH_USERNAME=admin
+      - OPENSEARCH_PASSWORD=admin
+      - OPENSEARCH_INDEX=spark-ioc
+      - MONITOR_ENABLED=true
+      - MONITOR_FILE_OPS=true
+      - MONITOR_NETWORK_OPS=true
+      - LOG_LEVEL=info
+    ports:
+      - "50051:50051"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /sys/kernel/debug:/sys/kernel/debug:ro
+      - /sys/fs/bpf:/sys/fs/bpf
+    networks:
+      - spark-network
+    depends_on:
+      - opensearch
+    # Требуется привилегированный режим для eBPF мониторинга
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - BPF
+      - NET_ADMIN
+
+volumes:
+  opensearch-data:
+
+networks:
+  spark-network:
+    driver: bridge
